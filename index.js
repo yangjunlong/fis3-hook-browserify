@@ -8,10 +8,10 @@ function onFileLookUp(info, file, silent, opts) {
   var isDone = false;
 
   opts = Object.assign({}, {
-	commonModuleRoot: fis.project.getProjectPath(), // common模块目录
-	browserifyDir: '/client/browserify/',
-	commonModuleNs: 'common', // common模块命名空间
-	//isMod: true,
+  commonModuleRoot: fis.project.getProjectPath(), // common模块目录
+  browserifyDir: '/client/browserify/',
+  commonModuleNs: 'common', // common模块命名空间
+  //isMod: true,
 
   }, opts);
 
@@ -28,9 +28,14 @@ function onFileLookUp(info, file, silent, opts) {
     fis.media().set('namespace', commonModuleNs);
 
     var browserifyDir = path.resolve(commonModuleRoot + opts.browserifyDir + id + '.js');
-    var tmp = uri(browserifyDir);
+    var tmp = {};
 
-    if(!fs.existsSync(browserifyDir)) {
+    if(fs.existsSync(browserifyDir)) {
+      tmp = uri(browserifyDir);
+    } else {
+      fs.writeFileSync(browserifyDir, '');
+      tmp = uri(browserifyDir);
+
       var b = browserify();
       b.require(id);
       b.bundle(function(test, ret) {
