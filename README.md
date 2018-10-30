@@ -17,6 +17,11 @@ fis.hook('browserify', {
   // 通用模块命名空间
   commonModuleNs: 'common'
 });
+
+// 不需要再编译此目录下的js文件
+fis.match('client/browserify/*.js', {
+  useCompile: false,
+})
 ```
 
 ## 示例

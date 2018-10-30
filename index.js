@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var browserify = require('browserify');
+var UglifyJS = require("uglify-js");
 var deasync = require('deasync');
 
 function onFileLookUp(info, file, silent, opts) {
@@ -39,12 +40,16 @@ function onFileLookUp(info, file, silent, opts) {
       var b = browserify();
       b.require(id);
       b.bundle(function(test, ret) {
+        var content = ret.toString();
+       // content = content.substr(8);
+        content = UglifyJS.minify(content);
+
         fs.open(browserifyDir, 'w', function(err, fd){
           fs.writeSync(fd, "define('" + tmp.file.id + "', function(require, exports, module) {");
 
-          fs.writeSync(fd, 'var bundle = ');
-          fs.writeSync(fd,ret, 8);
-          fs.writeSync(fd, 'module.exports = bundle(\''+id+'\');');
+          fs.writeSync(fd, 'var mix = ');
+          fs.writeSync(fd, content.code);
+          fs.writeSync(fd, 'module.exports = mix(\''+id+'\');');
 
           fs.writeSync(fd, '})');
           isDone = true;
