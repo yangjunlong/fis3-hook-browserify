@@ -40,6 +40,9 @@ function onFileLookUp(info, file, silent, opts) {
       var b = browserify();
       b.require(id);
       b.bundle(function(test, ret) {
+        if(!ret) {
+            ret = '';
+        }
         var content = ret.toString();
        // content = content.substr(8);
         content = UglifyJS.minify(content);
