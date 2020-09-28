@@ -45,13 +45,13 @@ function onFileLookUp(info, file, silent, opts) {
         }
         var content = ret.toString();
        // content = content.substr(8);
-        content = UglifyJS.minify(content);
+        //content = UglifyJS.minify(content);
 
         fs.open(browserifyDir, 'w', function(err, fd){
           fs.writeSync(fd, "define('" + tmp.file.id + "', function(require, exports, module) {");
 
           fs.writeSync(fd, 'var mix = ');
-          fs.writeSync(fd, content.code);
+          fs.writeSync(fd, content);
           fs.writeSync(fd, 'module.exports = mix(\''+id+'\');');
 
           fs.writeSync(fd, '})');
