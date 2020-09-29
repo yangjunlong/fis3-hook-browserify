@@ -1,83 +1,100 @@
 var fs = require('fs');
 var path = require('path');
 var browserify = require('browserify');
-var UglifyJS = require("uglify-js");
 var deasync = require('deasync');
+var resolve = require('resolve');
+const mkdirp = require('mkdirp');
+
+// common 模块名称
+const COMMON_MODULE_NAME = 'common';
+// common 模块路径
+const COMMON_MODULE_PATH = fis.project.getProjectPath(path.join('..', COMMON_MODULE_NAME));
+// 工作目录
+const CWD = process.cwd();
+
+// 当前模块/项目地址
+const currentModulePath = fis.project.getProjectPath();
+// 当前模块/项目名称
+const currentModuleName = fis.media().get('namespace');
 
 function onFileLookUp(info, file, silent, opts) {
+  const { isFISID, rest } = info;
+
+  if (isFISID || info.file) {
+    return;
+  }
+
   var id = info.rest;
-  var isDone = false;
+  var isSync = false;
 
   opts = Object.assign({}, {
-  commonModuleRoot: fis.project.getProjectPath(), // common模块目录
-  browserifyDir: '/client/browserify/',
-  commonModuleNs: 'common', // common模块命名空间
-  //isMod: true,
+    // common模块命名空间，默认为common
+    commonModuleName: COMMON_MODULE_NAME,
+    // common模块目录，默认为当前模块目录
+    commonModulePath: COMMON_MODULE_PATH,
 
+    // browserify 资源存储路径
+    commonBrowserify: '/client/browserify/',
   }, opts);
 
-  if (!silent && /^([a-zA-Z0-9@][a-zA-Z0-9@\.\-_]*)(?:\/([a-zA-Z0-9@\/\.\-_]*))?$/.test(id) && !info.file && !info.isFISID) {
-    var commonModuleRoot = opts.commonModuleRoot;
-    var commonModuleNs = opts.commonModuleNs;
+  var tmp = {};
 
-    var currentModuleDir = fis.project.getProjectPath();
-    var currentModuleNs = fis.media().get('namespace');
+  try {
+    let res = resolve.sync(rest, { basedir: CWD });
+    const { commonModuleName, commonModulePath, commonBrowserify } = opts;
+    // 设置命名空间
+    fis.project.setProjectRoot(commonModulePath);
+    fis.media().set('namespace', commonModuleName);
+    let browserifyFile = path.join(commonModulePath, commonBrowserify, rest + '.js');
 
-    commonModuleRoot = path.resolve(commonModuleRoot);
-
-    fis.project.setProjectRoot(commonModuleRoot);
-    fis.media().set('namespace', commonModuleNs);
-
-    var browserifyDir = path.resolve(commonModuleRoot + opts.browserifyDir + id + '.js');
-    var tmp = {};
-
-    if(fs.existsSync(browserifyDir)) {
-      tmp = uri(browserifyDir);
+    if (fs.existsSync(browserifyFile)) {
+      tmp = uri(browserifyFile);
     } else {
-      fs.writeFileSync(browserifyDir, '');
-      tmp = uri(browserifyDir);
+
+
+      fs.writeFileSync(browserifyFile, '');
+      tmp = uri(browserifyFile);
+      let module_id = tmp.file.getId();
 
       var b = browserify();
       b.require(id);
-      b.bundle(function(test, ret) {
-        if(!ret) {
-            ret = '';
+      b.bundle(function (test, chunk) {
+        if (!chunk) {
+          chunk = '';
         }
-        var content = ret.toString();
-       // content = content.substr(8);
+        var content = chunk.toString();
+        // content = content.substr(8);
         //content = UglifyJS.minify(content);
 
-        fs.open(browserifyDir, 'w', function(err, fd){
-          fs.writeSync(fd, "define('" + tmp.file.id + "', function(require, exports, module) {");
+        fs.open(browserifyFile, 'w', function (err, fd) {
+          fs.writeSync(fd, "define('" + module_id + "', function(require, exports, module) {");
 
           fs.writeSync(fd, 'var mix = ');
           fs.writeSync(fd, content);
-          fs.writeSync(fd, 'module.exports = mix(\''+id+'\');');
+          fs.writeSync(fd, 'module.exports = mix(\'' + rest + '\');');
 
           fs.writeSync(fd, '})');
-          isDone = true;
+          isSync = true;
         });
       });
 
-      // 同步输出到文件
-      deasync.loopWhile(function() {
-        return !isDone;
+      // 同步输出
+      deasync.loopWhile(function () {
+        return !isSync;
       });
     }
 
-    fis.project.setProjectRoot(currentModuleDir);
-    fis.media().set('namespace', currentModuleNs);
-
-    tmp.file.moduleId = tmp.file.id;
+    tmp.file.moduleId = tmp.file.getId();
     info.file = tmp.file;
 
+  } catch (e) {
+    // todo
   }
 }
 
-
 function uri(file) {
   var info = fis.util.stringQuote(file),
-      qInfo = fis.util.query(info.rest);
+    qInfo = fis.util.query(info.rest);
 
   info.query = qInfo.query;
   info.hash = qInfo.hash;
@@ -94,10 +111,10 @@ function uri(file) {
   return info;
 };
 
-module.exports = function(fis, opts) {
-  opts.shutup || fis.on('release:start', function() {
+module.exports = function (fis, opts) {
+  opts.shutup || fis.on('release:start', function () {
     fis.removeListener('lookup:file', onFileLookUp);
-    fis.on('lookup:file', function(info, file, silent) {
+    fis.on('lookup:file', function (info, file, silent) {
       onFileLookUp(info, file, silent, opts);
     });
   });

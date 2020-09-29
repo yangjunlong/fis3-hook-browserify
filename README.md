@@ -1,6 +1,6 @@
 # fis3-hook-browserify
 
-> a fis3 hook plugin for page browserify
+> a fis3 hook plugin for browserify
 
 
 ## usage
@@ -11,11 +11,11 @@
 ```
 fis.hook('browserify', {
   // 通用模块目录路径，一般模块命名common
-  commonModuleRoot: __dirname + '/common',
+  commonModulePath: __dirname + '/common',
   // browserify文件存放路径
-  browserifyDir: '/client/browserify/',
+  commonBrowserify: '/client/browserify/',
   // 通用模块命名空间
-  commonModuleNs: 'common'
+  commonModuleName: 'common'
 });
 
 // 不需要再编译此目录下的js文件
@@ -37,5 +37,4 @@ console.log(querystring);
 var querystring = require('common:browserify/querystring.js');
 console.log(querystring);
 ```
-同时会在common模块下的`browserifyDir`路径生成browserify文件：`querystring.js`
-
+同时会在common模块下的`commonBrowserify`路径生成browserify文件：`querystring.js`

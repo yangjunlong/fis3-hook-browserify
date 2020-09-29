@@ -1,6 +1,6 @@
 {
   "name": "fis3-hook-browserify",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -24,6 +24,7 @@
   "devDependencies": {
     "browserify": "^16.5.2",
     "deasync": "^0.1.20",
-    "uglify-js": "^3.11.0"
+    "mkdirp": "^1.0.4",
+    "resolve": "^1.17.0"
   }
 }
