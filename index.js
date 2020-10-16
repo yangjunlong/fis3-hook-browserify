@@ -20,6 +20,8 @@ const currentModuleName = fis.media().get('namespace');
 function onFileLookUp(info, file, silent, opts) {
   const { isFISID, rest } = info;
 
+  
+
   if (isFISID || info.file) {
     return;
   }
@@ -41,16 +43,17 @@ function onFileLookUp(info, file, silent, opts) {
 
   try {
     let res = resolve.sync(rest, { basedir: CWD });
+
     const { commonModuleName, commonModulePath, commonBrowserify } = opts;
     // 设置命名空间
     fis.project.setProjectRoot(commonModulePath);
     fis.media().set('namespace', commonModuleName);
     let browserifyFile = path.join(commonModulePath, commonBrowserify, rest + '.js');
-
+    
     if (fs.existsSync(browserifyFile)) {
       tmp = uri(browserifyFile);
     } else {
-
+      mkdirp.sync(path.dirname(browserifyFile))
 
       fs.writeFileSync(browserifyFile, '');
       tmp = uri(browserifyFile);
@@ -63,8 +66,6 @@ function onFileLookUp(info, file, silent, opts) {
           chunk = '';
         }
         var content = chunk.toString();
-        // content = content.substr(8);
-        //content = UglifyJS.minify(content);
 
         fs.open(browserifyFile, 'w', function (err, fd) {
           fs.writeSync(fd, "define('" + module_id + "', function(require, exports, module) {");
@@ -83,6 +84,9 @@ function onFileLookUp(info, file, silent, opts) {
         return !isSync;
       });
     }
+
+    fis.project.setProjectRoot(currentModulePath);
+    fis.media().set('namespace', currentModuleName);
 
     tmp.file.moduleId = tmp.file.getId();
     info.file = tmp.file;
